@@ -1,77 +1,138 @@
 import cv2
-import numpy as np
-import winsound
-from tensorflow.keras.models import load_model
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+import time
+import os
+import threading
 
-WINDOW_SIZE = 50
-THRESHOLD = 0.6
-
-cnn = MobileNetV2(
-    weights="imagenet",
-    include_top=False,
-    pooling="avg",
-    input_shape=(224, 224, 3)
-)
-
-lstm = load_model("models/lstm_accident_detector.h5")
-
-feature_buffer = []
-alert_triggered = False
-
-
-def play_alert():
-    winsound.Beep(1000, 1000)
-
-
-def extract_feature(frame):
-    frame = cv2.resize(frame, (224, 224))
-    frame = preprocess_input(frame.astype(np.float32))
-    feature = cnn.predict(frame[None, ...], verbose=0)
-    return feature[0]
+from src.inference.detect_accident_video import detect_from_frame as detect_accident, play_alert
+from services.email_alert import send_email_alert
 
 
 def generate_frames():
-    global alert_triggered
+    VIDEO_SOURCE = 0  # 0 for webcam, or provide video file path
+    cap = cv2.VideoCapture(VIDEO_SOURCE)
+    
+    if not cap.isOpened():
+        print("❌ Error: Could not open video source.")
+        exit()
+        
+    ALERT_THRESHOLD = 0.5      # Show alert text
+    EMAIL_THRESHOLD = 0.6      # Send email if above this
+    ALERT_DURATION = 5         # Seconds siren active
+    EMAIL_COOLDOWN = 600       # Seconds between emails (10 min)
+    
+    alert_active = False
+    alert_start_time = 0
+    last_email_time = 0
+    
+    # Ensure static folder exists
+    if not os.path.exists("static"):
+        os.makedirs("static")
 
-    cap = cv2.VideoCapture(0)
-
+    print("🎥 Live Tunnel CCTV Monitoring Started...")
+    print("Press 'q' to quit.\n")
+    
     while True:
         ret, frame = cap.read()
         if not ret:
+            print("❌ Failed to grab frame.")
             break
 
-        feature = extract_feature(frame)
-        feature_buffer.append(feature)
+        # Run detection
+        accident_prob = detect_accident(frame)
 
-        if len(feature_buffer) > WINDOW_SIZE:
-            feature_buffer.pop(0)
+        # Safety check
+        if accident_prob is None:
+            accident_prob = 0.0
 
-        label = "Normal"
-        color = (0, 255, 0)
+        # Display CCTV header
+        cv2.putText(frame, "CCTV MONITOR",
+                (20, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2)
 
-        if len(feature_buffer) == WINDOW_SIZE:
-            seq = np.array(feature_buffer)[None, ...]
-            prob = lstm.predict(seq, verbose=0)[0][0]
+        current_time = time.time()
 
-            if prob > THRESHOLD:
-                label = "🚨 ACCIDENT DETECTED"
-                color = (0, 0, 255)
-                
-                play_alert()
-                # if not alert_triggered:
-                    # play_alert()
-                    # alert_triggered = True
+        if accident_prob > ALERT_THRESHOLD:
+            # Display detection text
+            cv2.putText(frame,
+                    "ACCIDENT DETECTED",
+                    (50, 80),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.2,
+                    (0, 0, 255),
+                    3)
 
-        cv2.putText(frame, label, (30, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+            # Determine severity
+            if accident_prob > 0.8:
+                severity = 3
+            elif accident_prob > 0.65:
+                severity = 2
+            else:
+                severity = 1
 
-        _, buffer = cv2.imencode(".jpg", frame)
-        frame_bytes = buffer.tobytes()
+            # ----------------------------------------------------
+            # 🔊 ALERT CONTROL (Threaded, Non-Blocking)
+            # ----------------------------------------------------
+            if not alert_active:
+                print("🔊 Playing alert sound...")
+                threading.Thread(
+                target=play_alert,
+                daemon=True
+                ).start()
 
-        yield (b"--frame\r\n"
-               b"Content-Type: image/jpeg\r\n\r\n" +
-               frame_bytes + b"\r\n")
+                alert_active = True
+                alert_start_time = current_time
+
+            # Stop alert flag after duration
+            if alert_active and (current_time - alert_start_time > ALERT_DURATION):
+                alert_active = False
+
+            # ----------------------------------------------------
+            # 📧 EMAIL CONTROL (Cooldown Protected, Threaded)
+            # ----------------------------------------------------
+            if accident_prob > EMAIL_THRESHOLD and \
+            (current_time - last_email_time > EMAIL_COOLDOWN):
+
+                print("📧 Sending email alert...")
+
+                snapshot_path = "static/live_snapshot.jpg"
+                cv2.imwrite(snapshot_path, frame)
+
+                threading.Thread(
+                target=send_email_alert,
+                args=(severity, accident_prob, snapshot_path),
+                daemon=True
+                ).start()
+
+                last_email_time = current_time
+
+        else:
+            alert_active = False
+
+        # Show probability on screen (for debugging)
+        cv2.putText(frame,
+                f"Confidence: {round(accident_prob, 3)}",
+                (20, 120),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (255, 255, 0),
+                2)
+
+        # Display window
+        cv2.imshow("Tunnel CCTV Accident Detection", frame)
+
+        # Exit condition
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+
+    # ============================================================
+    # 🛑 CLEANUP
+    # ============================================================
 
     cap.release()
+    cv2.destroyAllWindows()
+
+    print("🛑 Monitoring Stopped.")
