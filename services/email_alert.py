@@ -6,7 +6,7 @@ import os
 
 # 🔐 Replace with your credentials
 SENDER_EMAIL = "vasantha70938@gmail.com"
-SENDER_PASSWORD = "cugpwrttamvhdbji"
+SENDER_PASSWORD = "xxxxxxx"
 RECEIVER_EMAIL = "vasantha70938@gmail.com"
 
 def send_email_alert(severity, confidence, snapshot_path=None):
