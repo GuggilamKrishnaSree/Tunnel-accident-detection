@@ -1,4 +1,4 @@
-# Real-Time Tunnel Accident Anticipation and Detection System
+# Spatio-Temporal Video Intelligence System for Road Accident Detection in Tunnels
 
 This project presents a real-time video-based system for **traffic accident anticipation and detection**, specifically designed for **tunnel-like environments** using deep spatio-temporal learning.
 
