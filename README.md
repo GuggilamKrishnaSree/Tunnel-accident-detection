@@ -10,7 +10,6 @@ The system not only detects accidents after they occur, but also **anticipates p
 - Accident anticipation from video streams
 - Real-time accident detection
 - Tunnel environment simulation
-- Explainable AI for safety-critical decisions
 - Deployment-ready architecture for live inference
 
 ---
@@ -21,7 +20,6 @@ The system not only detects accidents after they occur, but also **anticipates p
 - CNN + LSTM spatio-temporal architecture
 - Sliding window–based accident anticipation
 - Real-time alert generation
-- Grad-CAM–based explainability
 - Web-based and server-side deployment support
 
 ---
@@ -32,8 +30,7 @@ The system not only detects accidents after they occur, but also **anticipates p
 3. Spatial feature extraction using CNN (MobileNet)
 4. Temporal modeling using LSTM
 5. Accident anticipation and detection
-6. Visual explanation using Grad-CAM
-7. Alert generation and deployment
+7. Alert generation
 
 ---
 
@@ -47,16 +44,12 @@ The system not only detects accidents after they occur, but also **anticipates p
 
 ## ⚙️ Technology Stack
 - Python
-- TensorFlow / PyTorch
+- TensorFlow
 - OpenCV
-- FastAPI / Flask
-- NumPy, Matplotlib
+- Flask
+- NumPy
 - VS Code
 
 ---
 
-## 📌 Project Status
-Currently under active development with planned enhancements including:
-- Real-time video streaming interface
-- Alert notification system
-- Deployment on edge/cloud servers
+
