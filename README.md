@@ -1,13 +1,10 @@
 # Spatio-Temporal Video Intelligence System for Road Accident Detection in Tunnels
 
-This project presents a real-time video-based system for **traffic accident anticipation and detection**, specifically designed for **tunnel-like environments** using deep spatio-temporal learning.
-
-The system not only detects accidents after they occur, but also **anticipates potential accidents several frames in advance**, enabling early warnings and proactive safety measures.
+This project presents a real-time video-based system for **traffic accident detection**, specifically designed for **tunnel-like environments** using deep spatio-temporal learning.
 
 ---
 
 ## 🚀 Key Objectives
-- Accident anticipation from video streams
 - Real-time accident detection
 - Tunnel environment simulation
 - Deployment-ready architecture for live inference
@@ -18,7 +15,7 @@ The system not only detects accidents after they occur, but also **anticipates p
 - Video-based accident analysis
 - Tunnel lighting and visibility simulation
 - CNN + LSTM spatio-temporal architecture
-- Sliding window–based accident anticipation
+- Sliding window–based accident detection
 - Real-time alert generation
 - Web-based and server-side deployment support
 
@@ -29,7 +26,7 @@ The system not only detects accidents after they occur, but also **anticipates p
 2. Tunnel environment simulation (training-time)
 3. Spatial feature extraction using CNN (MobileNet)
 4. Temporal modeling using LSTM
-5. Accident anticipation and detection
+5. Accident detection
 7. Alert generation
 
 ---
