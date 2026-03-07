@@ -15,6 +15,8 @@ VIDEO_SOURCE = 0  # 0 for webcam, or provide video file path
 
 cap = cv2.VideoCapture(VIDEO_SOURCE)
 
+prob_buffer = []
+
 if not cap.isOpened():
     print("❌ Error: Could not open video source.")
     exit()
@@ -24,10 +26,10 @@ if not cap.isOpened():
 # ⚙ CONFIGURATION
 # ============================================================
 
-ALERT_THRESHOLD = 0.5      # Show alert text
-EMAIL_THRESHOLD = 0.6      # Send email if above this
+ALERT_THRESHOLD = 0.6      # Show alert text
+EMAIL_THRESHOLD = 0.75      # Send email if above this
 ALERT_DURATION = 5         # Seconds siren active
-EMAIL_COOLDOWN = 600       # Seconds between emails (10 min)
+EMAIL_COOLDOWN = 300       # Seconds between emails (5 min)
 
 
 # ============================================================
@@ -59,11 +61,18 @@ while True:
         break
 
     # Run detection
-    accident_prob = detect_accident(frame)
+    prob = detect_accident(frame)
+    if prob is None:
+        prob = 0.0
+    else:
+        prob -= 0.3
+        
+    prob_buffer.append(accident_prob)
 
-    # Safety check
-    if accident_prob is None:
-        accident_prob = 0.0
+    if len(prob_buffer) > 15:
+        prob_buffer.pop(0)
+
+    accident_prob = sum(prob_buffer) / len(prob_buffer)
 
     # Display CCTV header
     cv2.putText(frame, "CCTV MONITOR",
@@ -90,6 +99,7 @@ while True:
                     3)
 
         # Determine severity
+        
         if accident_prob > 0.8:
             severity = 3
         elif accident_prob > 0.65:

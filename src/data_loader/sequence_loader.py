@@ -2,14 +2,15 @@ import os
 import numpy as np
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-FEATURE_ROOT = "data/processed/features"
+FEATURE_ROOT = "src/data/processed/features"
 
 def load_sequences(max_timesteps=50):
     X = []
     y = []
 
     for label_dir, label in [("Crash-1500", 1), ("Normal", 0)]:
-        dir_path = os.path.join(FEATURE_ROOT, label_dir)
+        dir_path = FEATURE_ROOT+"/"+label_dir
+        print(dir_path)
 
         for file in sorted(os.listdir(dir_path)):
             if not file.endswith(".npy"):
